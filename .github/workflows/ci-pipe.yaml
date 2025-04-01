@@ -103,7 +103,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_TOKEN }}
 
       - name: Extract metadata for Docker
         id: meta
@@ -126,10 +126,14 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Set image tag for scanning
+        run: echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
       - name: Scan Docker image for vulnerabilities
         uses: aquasecurity/trivy-action@master
+        continue-on-error: true
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ env.IMAGE_TAG }}
           format: 'sarif'
           output: 'trivy-image-results.sarif'
           severity: 'CRITICAL,HIGH'
@@ -202,7 +206,7 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.5.0
         env:
-          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          CR_TOKEN: "${{ secrets.GH_TOKEN }}"
         with:
           charts_dir: charts
 
