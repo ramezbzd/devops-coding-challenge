@@ -135,8 +135,8 @@ jobs:
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           
           # Update the image tag in the Helm chart values.yaml
-          sed -i "s/tag: \".*\"/tag: \"sha-$SHORT_SHA\"/" ${{ env.CHART_PATH }}/values.yaml
-          sed -i "s/repository: .*/repository: ${{ env.REGISTRY }}\/${{ env.IMAGE_NAME }}/" ${{ env.CHART_PATH }}/values.yaml
+          sed -i 's|tag: ".*"|tag: "sha-'$SHORT_SHA'"|' ${{ env.CHART_PATH }}/values.yaml
+          sed -i 's|repository: .*|repository: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}|' ${{ env.CHART_PATH }}/values.yaml
           
           # Commit and push the updated values.yaml
           git config --global user.name "GitHub Actions"
