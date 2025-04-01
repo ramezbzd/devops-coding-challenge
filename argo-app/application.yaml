@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: challenge-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: crewmeister-challenge
+    repoURL: https://ramezbzd.github.io/devops-coding-challenge/
+    targetRevision: 0.1.0
+    helm:
+      releaseName: crewmeister-challenge
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: default

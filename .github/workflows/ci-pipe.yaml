@@ -1,0 +1,306 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment (aws or local)'
+        required: true
+        default: 'local'
+        type: choice
+        options:
+          - aws
+          - local
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  CHART_PATH: ./charts/crewmeister-challenge
+  JAVA_VERSION: '17'
+  CHART_VERSION: '0.1.0'
+  TERRAFORM_VERSION: '1.11.3'
+  TF_WORKING_DIR: ./terraform
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Dependency scanning
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload dependency scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'dependency-scanning'
+
+      - name: Lint Java code
+        run: mvn checkstyle:check
+
+      - name: Build with Maven
+        run: mvn -B package
+
+      - name: Run tests
+        run: mvn test
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-jar
+          path: target/*.jar
+
+  build-and-push-image:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            latest
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-image-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload image scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-image-results.sarif'
+          category: 'container-scanning'
+
+  helm-chart-release:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      TARGET_ENV: ${{ github.event.inputs.environment || 'local' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      # Setup kubeconfig for local environment
+      - name: Setup kubeconfig for local environment
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl cluster-info
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'latest'
+
+      - name: Update Helm chart appVersion
+        run: |
+          # Extract the short SHA
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          
+          # Update the appVersion in Chart.yaml
+          sed -i "s/appVersion: \".*\"/appVersion: \"$SHORT_SHA\"/" ${{ env.CHART_PATH }}/Chart.yaml
+          
+          # Increment the chart version
+          NEW_VERSION=$(awk -F. '{print $1"."$2"."$3+1}' <<< ${{ env.CHART_VERSION }})
+          sed -i "s/version: .*/version: $NEW_VERSION/" ${{ env.CHART_PATH }}/Chart.yaml
+          
+          # Store the new version for later use
+          echo "NEW_CHART_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Lint Helm chart
+        run: helm lint ${{ env.CHART_PATH }}
+
+      - name: Validate Helm chart with Kubernetes
+        run: |
+          helm template ${{ env.CHART_PATH }} | kubectl create --dry-run=client -f -
+
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.5.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          charts_dir: charts
+
+      - name: Update Argo CD application targetRevision
+        run: |
+          # Create argo-app directory if it doesn't exist
+          mkdir -p argo-app
+          
+          # Check if application.yaml exists
+          if [ -f "argo-app/application.yaml" ]; then
+            # Update only the targetRevision field
+            if grep -q "targetRevision:" "argo-app/application.yaml"; then
+              sed -i "s|targetRevision:.*|targetRevision: ${{ env.NEW_CHART_VERSION }}|" argo-app/application.yaml
+            else
+              echo "targetRevision field not found in application.yaml"
+              exit 1
+            fi
+          else
+            # Create a new application.yaml file
+            cat > argo-app/application.yaml << EOF
+          apiVersion: argoproj.io/v1alpha1
+          kind: Application
+          metadata:
+            name: crewmeister-challenge
+            namespace: argocd
+          spec:
+            project: default
+            source:
+              repoURL: ${{ github.server_url }}/${{ github.repository }}
+              targetRevision: ${{ env.NEW_CHART_VERSION }}
+              chart: crewmeister-challenge
+            destination:
+              server: https://kubernetes.default.svc
+              namespace: default
+            syncPolicy:
+              automated:
+                prune: true
+                selfHeal: true
+          EOF
+          fi
+          
+          # Commit and push the changes
+          git add argo-app/application.yaml
+          git commit -m "Update Argo CD application targetRevision to chart version ${{ env.NEW_CHART_VERSION }}"
+          git push
+
+  terraform-infrastructure:
+    needs: helm-chart-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for AWS authentication
+    env:
+      TARGET_ENV: ${{ github.event.inputs.environment || 'local' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Configure AWS credentials
+        if: env.TARGET_ENV == 'aws'
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: eu-central-1
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      # Setup kubeconfig for local environment
+      - name: Setup kubeconfig for local environment
+        if: env.TARGET_ENV == 'local'
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          kubectl cluster-info
+
+      - name: Terraform Init
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          terraform plan \
+            -var-file="${{ env.TF_WORKING_DIR }}/terraform.tfvars" \
+            -var="target_env=${{ env.TARGET_ENV }}" \
+            -out=tfplan
+
+      - name: Terraform Apply
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform apply -auto-approve tfplan
