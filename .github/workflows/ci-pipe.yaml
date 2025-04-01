@@ -129,6 +129,22 @@ jobs:
       - name: Set image tag for scanning
         run: echo "IMAGE_TAG=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
 
+      - name: Update Helm chart with new image tag
+        run: |
+          # Extract the short SHA tag for the Helm chart
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          
+          # Update the image tag in the Helm chart values.yaml
+          sed -i "s/tag: \".*\"/tag: \"sha-$SHORT_SHA\"/" ${{ env.CHART_PATH }}/values.yaml
+          sed -i "s/repository: .*/repository: ${{ env.REGISTRY }}\/${{ env.IMAGE_NAME }}/" ${{ env.CHART_PATH }}/values.yaml
+          
+          # Commit and push the updated values.yaml
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add ${{ env.CHART_PATH }}/values.yaml
+          git commit -m "Update Helm chart with new image tag sha-$SHORT_SHA" || echo "No changes to commit"
+          git push || echo "No changes to push"
+
       - name: Scan Docker image for vulnerabilities
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
@@ -162,19 +178,6 @@ jobs:
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      # Setup kubeconfig for local environment
-      - name: Setup kubeconfig for local environment
-        run: |
-          mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
-          chmod 600 ~/.kube/config
-          kubectl cluster-info
 
       - name: Install Helm
         uses: azure/setup-helm@v3
