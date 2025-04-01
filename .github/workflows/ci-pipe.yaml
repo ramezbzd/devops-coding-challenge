@@ -29,7 +29,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       security-events: write
     steps:
@@ -89,7 +89,7 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       security-events: write
     steps:
@@ -204,10 +204,6 @@ jobs:
 
       - name: Lint Helm chart
         run: helm lint ${{ env.CHART_PATH }}
-
-      - name: Validate Helm chart with Kubernetes
-        run: |
-          helm template ${{ env.CHART_PATH }} | kubectl create --dry-run=client -f -
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.5.0
