@@ -262,11 +262,6 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: eu-central-1
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
       # Setup kubeconfig for local environment
       - name: Setup kubeconfig for local environment
         if: env.TARGET_ENV == 'local'
@@ -274,7 +269,6 @@ jobs:
           mkdir -p ~/.kube
           echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           chmod 600 ~/.kube/config
-          kubectl cluster-info
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}

@@ -23,3 +23,14 @@ provider "helm" {
   }
 }
 
+provider "kubectl" {
+  config_path = "~/.kube/config"
+}
+
+provider "kubectl" {
+  alias = "aws"
+  host                   = var.target_env == "aws" ?  module.eks[0].cluster_endpoint : null
+  cluster_ca_certificate = var.target_env == "aws" ? base64decode(module.eks[0].cluster_certificate_authority_data) : null
+  token                  = var.target_env == "aws" ? data.aws_eks_cluster_auth.auth[0].token : null
+}
+

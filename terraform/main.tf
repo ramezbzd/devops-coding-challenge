@@ -37,6 +37,8 @@ module "helm_aws" {
   source = "./modules/helm_releases"
 
   argocd_version = var.argocd_version
+  github_token = var.github_token
+  github_repository = var.github_repository
 
   depends_on = [ module.eks[0] ]
   providers = {
@@ -49,6 +51,8 @@ module "helm" {
   source = "./modules/helm_releases"
 
   argocd_version = var.argocd_version
+  github_token = var.github_token
+  github_repository = var.github_repository
 
   providers = {
     helm = helm

@@ -1,21 +1,26 @@
 # This file is maintained automatically by "terraform init".
 # Manual edits may be lost in future updates.
 
-provider "registry.terraform.io/argoproj-labs/argocd" {
-  version     = "7.5.2"
-  constraints = "7.5.2"
+provider "registry.terraform.io/gavinbunney/kubectl" {
+  version     = "1.19.0"
+  constraints = ">= 1.7.0"
   hashes = [
-    "h1:YuOWl9qeHICAoZfKtbwoqyT8w6hzKx3vWpNgsm9SG5E=",
-    "zh:046c334c73b0faac86d95a3cffb8dc8d7d03281befa0639cb41b21d66b9667af",
-    "zh:04d30a2532e7fcdac4dce4cebd37c173b0e71a96111f8a76514d7a2afb3c1a13",
-    "zh:0c43e43f517a2933f6cad53c9626509b46c7a9805f58743e810d56b62856b123",
-    "zh:2d5af869bfeb8e783ccbe6f985b5e0d1c7fa0af198969f720c2fd5f5c31d6354",
-    "zh:40f2276e4b6a966ff24a29f694ada09d0a0812836c43759634d80fa3d4dbcaaa",
-    "zh:462925dd757dea1668440f289d2f1a02d304413e34fa3fb7468ea75b52c3ccbf",
-    "zh:6a1b382c987040dc718a3f3bfec4b33e9621b28c0fceef013a2290b4623efb04",
-    "zh:a812b1b7606f7f1b042eafe143fd8c2453df8029d9c2bb8b5d5862a256544e7c",
-    "zh:a957973272ac65463def58444beaf393d33851818d5c71bca9b55ab753eec49f",
-    "zh:f8e83fe69415bf3a22246c83dbdd9b9b0940734275beecf7ae309ec3126af4ab",
+    "h1:9QkxPjp0x5FZFfJbE+B7hBOoads9gmdfj9aYu5N4Sfc=",
+    "zh:1dec8766336ac5b00b3d8f62e3fff6390f5f60699c9299920fc9861a76f00c71",
+    "zh:43f101b56b58d7fead6a511728b4e09f7c41dc2e3963f59cf1c146c4767c6cb7",
+    "zh:4c4fbaa44f60e722f25cc05ee11dfaec282893c5c0ffa27bc88c382dbfbaa35c",
+    "zh:51dd23238b7b677b8a1abbfcc7deec53ffa5ec79e58e3b54d6be334d3d01bc0e",
+    "zh:5afc2ebc75b9d708730dbabdc8f94dd559d7f2fc5a31c5101358bd8d016916ba",
+    "zh:6be6e72d4663776390a82a37e34f7359f726d0120df622f4a2b46619338a168e",
+    "zh:72642d5fcf1e3febb6e5d4ae7b592bb9ff3cb220af041dbda893588e4bf30c0c",
+    "zh:9b12af85486a96aedd8d7984b0ff811a4b42e3d88dad1a3fb4c0b580d04fa425",
+    "zh:a1da03e3239867b35812ee031a1060fed6e8d8e458e2eaca48b5dd51b35f56f7",
+    "zh:b98b6a6728fe277fcd133bdfa7237bd733eae233f09653523f14460f608f8ba2",
+    "zh:bb8b071d0437f4767695c6158a3cb70df9f52e377c67019971d888b99147511f",
+    "zh:dc89ce4b63bfef708ec29c17e85ad0232a1794336dc54dd88c3ba0b77e764f71",
+    "zh:dd7dd18f1f8218c6cd19592288fde32dccc743cde05b9feeb2883f37c2ff4b4e",
+    "zh:ec4bd5ab3872dedb39fe528319b4bba609306e12ee90971495f109e142d66310",
+    "zh:f610ead42f724c82f5463e0e71fa735a11ffb6101880665d93f48b4a67b9ad82",
   ]
 }
 
