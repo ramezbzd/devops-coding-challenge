@@ -224,10 +224,6 @@ jobs:
           # Store the new version for later use
           echo "NEW_CHART_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-          # Commit and push the changes
-          git add ${{ env.CHART_PATH }}/Chart.yaml
-          git commit -m "Update chart version ${{ env.NEW_CHART_VERSION }}"
-
           # Verify the Chart.yaml content
           echo "Chart.yaml content after update:"
           cat ${{ env.CHART_PATH }}/Chart.yaml
@@ -246,6 +242,8 @@ jobs:
           sed -i '0,/targetRevision:/ s/targetRevision: .*/targetRevision: '"${{ env.NEW_CHART_VERSION }}"'/' argo-app/application.yaml
           
           # Commit and push the changes
+          git add ${{ env.CHART_PATH }}/Chart.yaml
+          git commit -m "Update chart version ${{ env.NEW_CHART_VERSION }}"
           git add argo-app/application.yaml
           git commit -m "Update Argo CD application targetRevision to chart version ${{ env.NEW_CHART_VERSION }}"
           git push
