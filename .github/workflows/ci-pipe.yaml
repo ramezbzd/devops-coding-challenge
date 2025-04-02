@@ -227,41 +227,8 @@ jobs:
 
       - name: Update Argo CD application targetRevision
         run: |
-          # Create argo-app directory if it doesn't exist
-          mkdir -p argo-app
-          
-          # Check if application.yaml exists
-          if [ -f "argo-app/application.yaml" ]; then
-            # Update only the targetRevision field
-            if grep -q "targetRevision:" "argo-app/application.yaml"; then
-              sed -i "s|targetRevision:.*|targetRevision: ${{ env.NEW_CHART_VERSION }}|" argo-app/application.yaml
-            else
-              echo "targetRevision field not found in application.yaml"
-              exit 1
-            fi
-          else
-            # Create a new application.yaml file
-            cat > argo-app/application.yaml << EOF
-          apiVersion: argoproj.io/v1alpha1
-          kind: Application
-          metadata:
-            name: crewmeister-challenge
-            namespace: argocd
-          spec:
-            project: default
-            source:
-              repoURL: ${{ github.server_url }}/${{ github.repository }}
-              targetRevision: ${{ env.NEW_CHART_VERSION }}
-              chart: crewmeister-challenge
-            destination:
-              server: https://kubernetes.default.svc
-              namespace: default
-            syncPolicy:
-              automated:
-                prune: true
-                selfHeal: true
-          EOF
-          fi
+          # Update the first occurrence of 'targetRevision:' in the file
+          sed -i '0,/targetRevision:/ s/targetRevision: .*/targetRevision: '"${{ env.NEW_CHART_VERSION }}"'/' argo-app/application.yaml
           
           # Commit and push the changes
           git add argo-app/application.yaml
@@ -320,6 +287,7 @@ jobs:
           terraform plan \
             -var-file="${{ env.TF_WORKING_DIR }}/terraform.tfvars" \
             -var="target_env=${{ env.TARGET_ENV }}" \
+            -var="gh_token=${{ secrets.GH_TOKEN }}"
             -out=tfplan
 
       - name: Terraform Apply
