@@ -209,15 +209,9 @@ jobs:
 
       - name: Update Helm chart version
         run: |
-          # Extract the short SHA
-          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          
-          # Update the version in Chart.yaml
-          sed -i "s/version: \".*\"/version: \"$SHORT_SHA\"/" ${{ env.CHART_PATH }}/Chart.yaml
-          
           # Increment the chart version
           NEW_VERSION=$(awk -F. '{print $1"."$2"."$3+1}' <<< ${{ env.CHART_VERSION }})
-          sed -i "s/version: .*/version: $NEW_VERSION/" ${{ env.CHART_PATH }}/Chart.yaml
+          sed -i '0,/^version:/ s/version: .*/version: '"$NEW_VERSION"'/' ${{ env.CHART_PATH }}/Chart.yaml
           
           # Store the new version for later use
           echo "NEW_CHART_VERSION=$NEW_VERSION" >> $GITHUB_ENV
