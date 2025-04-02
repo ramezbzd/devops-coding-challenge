@@ -8,7 +8,7 @@ spec:
   source:
     chart: crewmeister-challenge
     repoURL: https://ramezbzd.github.io/devops-coding-challenge/
-    targetRevision: 0.1.0
+    targetRevision: 0.1.1
     helm:
       releaseName: crewmeister-challenge
   destination:
