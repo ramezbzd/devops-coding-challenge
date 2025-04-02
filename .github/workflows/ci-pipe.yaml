@@ -292,7 +292,7 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform plan \
-            -var-file="${{ env.TF_WORKING_DIR }}/terraform.tfvars" \
+            -var-file="terraform.tfvars" \
             -var="target_env=${{ env.TARGET_ENV }}" \
             -var="gh_token=${{ secrets.GH_TOKEN }}"
             -out=tfplan
