@@ -3,6 +3,26 @@ entries:
   crewmeister-challenge:
   - apiVersion: v2
     appVersion: 1.16.0
+    created: "2025-04-02T03:24:49.002123328Z"
+    dependencies:
+    - name: mysql
+      repository: https://charts.bitnami.com/bitnami
+      version: 12.3.2
+    - name: grafana
+      repository: https://grafana.github.io/helm-charts
+      version: 8.11.0
+    - name: prometheus
+      repository: https://prometheus-community.github.io/helm-charts
+      version: 27.7.1
+    description: A Helm chart for Kubernetes
+    digest: 008361ca49e4444994f31880e800df586aae0c1b497d3800c79edf8f3ea7695a
+    name: crewmeister-challenge
+    type: application
+    urls:
+    - https://github.com/ramezbzd/devops-coding-challenge/releases/download/crewmeister-challenge-0.1.2/crewmeister-challenge-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 1.16.0
     created: "2025-04-02T01:46:32.833435572Z"
     dependencies:
     - name: mysql
@@ -21,4 +41,4 @@ entries:
     urls:
     - https://github.com/ramezbzd/devops-coding-challenge/releases/download/crewmeister-challenge-0.1.1/crewmeister-challenge-0.1.1.tgz
     version: 0.1.1
-generated: "2025-04-02T01:46:32.833445811Z"
+generated: "2025-04-02T03:24:49.002136542Z"
