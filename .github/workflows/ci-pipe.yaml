@@ -223,6 +223,7 @@ jobs:
         env:
           CR_TOKEN: "${{ secrets.GH_TOKEN }}"
         with:
+          skip_existing: true
           charts_dir: charts
 
       - name: Update Argo CD application targetRevision
