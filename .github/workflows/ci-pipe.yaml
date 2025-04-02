@@ -187,13 +187,13 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Update Helm chart appVersion
+      - name: Update Helm chart version
         run: |
           # Extract the short SHA
           SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
           
-          # Update the appVersion in Chart.yaml
-          sed -i "s/appVersion: \".*\"/appVersion: \"$SHORT_SHA\"/" ${{ env.CHART_PATH }}/Chart.yaml
+          # Update the version in Chart.yaml
+          sed -i "s/version: \".*\"/version: \"$SHORT_SHA\"/" ${{ env.CHART_PATH }}/Chart.yaml
           
           # Increment the chart version
           NEW_VERSION=$(awk -F. '{print $1"."$2"."$3+1}' <<< ${{ env.CHART_VERSION }})
@@ -212,16 +212,6 @@ jobs:
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          
-          # Check available versions
-          echo "Available MySQL versions:"
-          helm search repo bitnami/mysql --versions | head -n 10
-          
-          echo "Available Grafana versions:"
-          helm search repo grafana/grafana --versions | head -n 10
-          
-          echo "Available Prometheus versions:"
-          helm search repo prometheus-community/prometheus --versions | head -n 10
           
           # Remove Chart.lock to force regeneration
           rm -f ${{ env.CHART_PATH }}/Chart.lock
