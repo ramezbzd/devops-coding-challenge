@@ -212,6 +212,9 @@ jobs:
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
+
+          # Remove Chart.lock to force regeneration
+          rm -f ${{ env.CHART_PATH }}/Chart.lock
           
           # Update dependencies
           helm dependency update ${{ env.CHART_PATH }}
