@@ -214,7 +214,7 @@ jobs:
           helm repo update
           
           # Update dependencies
-          helm dependency build ${{ env.CHART_PATH }}
+          helm dependency update ${{ env.CHART_PATH }}
           
           # List the dependencies to verify they were downloaded
           ls -la ${{ env.CHART_PATH }}/charts/
