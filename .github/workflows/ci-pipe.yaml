@@ -21,7 +21,6 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   CHART_PATH: ./charts/crewmeister-challenge
   JAVA_VERSION: '17'
-  CHART_VERSION: '0.1.0'
   TERRAFORM_VERSION: '1.11.3'
   TF_WORKING_DIR: ./terraform
 
@@ -211,13 +210,22 @@ jobs:
 
       - name: Update Helm chart version
         run: |
+          # Extract the current version from Chart.yaml
+          CURRENT_VERSION=$(grep '^version:' ${{ env.CHART_PATH }}/Chart.yaml | awk '{print $2}')
+          echo "Current chart version: $CURRENT_VERSION"
+          
           # Increment the chart version
-          NEW_VERSION=$(awk -F. '{print $1"."$2"."$3+1}' <<< ${{ env.CHART_VERSION }})
+          NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1"."$2"."$3+1}')
+          echo "New chart version: $NEW_VERSION"
+          
+          # Update only the main version line in Chart.yaml
           sed -i '0,/^version:/ s/version: .*/version: '"$NEW_VERSION"'/' ${{ env.CHART_PATH }}/Chart.yaml
           
           # Store the new version for later use
           echo "NEW_CHART_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
+          # Verify the Chart.yaml content
+          echo "Chart.yaml content after update:"
           cat ${{ env.CHART_PATH }}/Chart.yaml
 
       - name: Run chart-releaser
