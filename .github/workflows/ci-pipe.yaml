@@ -211,6 +211,26 @@ jobs:
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm repo add grafana https://grafana.github.io/helm-charts
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          
+          # Check available versions
+          echo "Available MySQL versions:"
+          helm search repo bitnami/mysql --versions | head -n 10
+          
+          echo "Available Grafana versions:"
+          helm search repo grafana/grafana --versions | head -n 10
+          
+          echo "Available Prometheus versions:"
+          helm search repo prometheus-community/prometheus --versions | head -n 10
+          
+          # Remove Chart.lock to force regeneration
+          rm -f ${{ env.CHART_PATH }}/Chart.lock
+          
+          # Update dependencies with specific versions
+          helm dependency build ${{ env.CHART_PATH }}
+          
+          # List the dependencies to verify they were downloaded
+          ls -la ${{ env.CHART_PATH }}/charts/
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.7.0
