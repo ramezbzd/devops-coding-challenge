@@ -20,7 +20,6 @@ resource "helm_release" "argocd" {
             name = var.github_repository
             username = "git"
             password = var.github_token
-            insecure = false
           }
         }
         secret = {
@@ -40,14 +39,13 @@ resource "kubectl_manifest" "argocd_app" {
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: sealed-secrets
+  name: argo-app
   namespace: argocd
 spec:
   project: default
   source:
-    chart: sealed-secrets
     repoURL: https://github.com/${var.github_repository}
-    targetRevision: "HEAD"
+    targetRevision: main
     path: "argo-app"
     directory:
       recurse: true

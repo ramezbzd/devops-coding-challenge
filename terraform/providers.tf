@@ -2,8 +2,17 @@ data "aws_eks_cluster_auth" "auth" {
   count = var.target_env == "aws" ? 1 : 0
   name = module.eks[0].cluster_name
 }
+terraform {
+  backend "s3" {
+    bucket = "mybucket"
+    key    = "my-crewmeister-challenge-bucket/key"
+    region = "eu-central-1"
+    profile = "default"
+  }
+}
 provider "aws" {
   region     = "eu-central-1"
+  profile = "default"
 }
 
 # Local Kubernetes provider (using your local kubeconfig)
